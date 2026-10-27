@@ -68,19 +68,19 @@ jobs:
         uses: softprops/action-gh-release@v2
         if: github.ref == 'refs/heads/main'
         with:
-          tag_name: v1.0.2
-          name: "CrowdMonitor Mobile v1.0.2 (100% Standalone APK)"
+          tag_name: v1.0.3
+          name: "CrowdMonitor Mobile v1.0.3 (Direct HiveMQ Cloud WSS - Zero PC Dependency)"
           draft: false
           prerelease: false
           token: ${{ secrets.GITHUB_TOKEN }}
           body: |
-            ### 📱 CrowdMonitor Autonomous Mobile App v1.0.2
+            ### 📱 CrowdMonitor Autonomous Mobile App v1.0.3
 
-            **100% Self-Contained Prototype — Zero Laptop Dependency:**
-            - 🚀 **Zero Setup Required**: Operates completely standalone directly on your Android phone without running any terminal, server, or Wi-Fi pairing on your laptop.
-            - 🔑 **Instant Admin Login**: Log in with `admin` / `admin123` (or click "Auto-Fill") — logs in immediately with zero network errors.
-            - 📊 **Full Console Access**: Live room monitor, headcount gauges, real-time telemetry simulation, analytics charts, session controls, and alerts.
-            - 👥 **Visitor Portal**: Check `ROOM-101` occupancy instantly.
+            **100% Real Live IoT Stream — Zero Laptop or Server Dependency:**
+            - 🌐 **Direct HiveMQ Cloud WSS**: Phone connects directly to `wss://...hivemq.cloud:8884/mqtt` over TLS.
+            - 📡 **Real Hardware Telemetry**: Subscribes directly to `crowd/occupancy` for real live ESP8266 IR beam sensor data. No fake or artificial data.
+            - 🎛️ **Direct Capacity Control**: Publishes capacity adjustments directly to `crowd/capacity` (retain: true, QoS: 1) straight to the ESP8266 servo gate.
+            - 🔑 **Instant On-Device Admin Login**: Authenticate with `admin` / `admin123` right on your phone without needing a PC.
             
             **Direct Download:**
             - Tap `CrowdMonitor.apk` under **Assets** below to download and install.
