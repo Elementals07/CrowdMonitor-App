@@ -34,6 +34,7 @@ jobs:
           mkdir -p "$ANDROID_HOME/licenses" || true
           echo -e "\n8933bad161af4178b1185d1a37fbf41ea5269c55\nd56f5187479451eabf01fb78af6dfcb131a6481e\n24333f8a63b682449dd4133f4f891319e2e0dd9c" > "$ANDROID_HOME/licenses/android-sdk-license"
           echo -e "\n84831b9409646a918e30573bab4c9c91346d8abd" > "$ANDROID_HOME/licenses/android-sdk-preview-license"
+          find "$ANDROID_HOME/cmdline-tools" -name sdkmanager -exec {} "platforms;android-36" \; 2>/dev/null || true
 
       - name: Build Web Bundle
         working-directory: ./client
