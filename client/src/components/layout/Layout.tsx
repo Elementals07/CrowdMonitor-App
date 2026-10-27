@@ -11,11 +11,13 @@ import {
   Menu,
   X,
   Activity,
-  ExternalLink
+  ExternalLink,
+  Server
 } from 'lucide-react';
 import { socket } from '../../socket';
-import { api, MqttStatus } from '../../api';
+import { api, MqttStatus, getServerUrl } from '../../api';
 import { StatusDot } from '../ui/StatusDot';
+import { ServerSettingsModal } from '../ServerSettingsModal';
 import clsx from 'clsx';
 
 interface NavItem {
@@ -33,6 +35,7 @@ interface NavGroup {
 
 export const Layout: React.FC = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [serverModalOpen, setServerModalOpen] = useState(false);
   const [openAlertCount, setOpenAlertCount] = useState<number>(0);
   const [mqttStatus, setMqttStatus] = useState<MqttStatus>({
     connected: false,
@@ -152,6 +155,14 @@ export const Layout: React.FC = () => {
         </div>
         
         <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setServerModalOpen(true)}
+            className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+            title="Configure Server Address"
+          >
+            <Server className="w-5 h-5 text-blue-400" />
+          </button>
           <StatusDot connected={mqttStatus.connected} stale={isStale} size="sm" />
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
@@ -245,6 +256,24 @@ export const Layout: React.FC = () => {
           ))}
         </nav>
 
+        {/* Server Address Configuration */}
+        <div className="px-3.5 pb-2">
+          <button
+            type="button"
+            onClick={() => setServerModalOpen(true)}
+            className="flex items-center justify-between w-full px-3.5 py-2 rounded-xl text-xs font-semibold text-slate-300 hover:text-white bg-slate-900/60 hover:bg-slate-800 border border-slate-800 transition-all cursor-pointer"
+            title="Configure Backend Server Address"
+          >
+            <div className="flex items-center gap-2">
+              <Server className="w-3.5 h-3.5 text-blue-400" />
+              <span>Server Address</span>
+            </div>
+            <span className="text-[10px] text-slate-400 font-mono truncate max-w-[80px]">
+              {getServerUrl() || 'Config'}
+            </span>
+          </button>
+        </div>
+
         {/* Switch to Public Portal Shortcut Button */}
         <div className="px-3.5 pb-3">
           <NavLink
@@ -302,6 +331,12 @@ export const Layout: React.FC = () => {
           <Outlet />
         </div>
       </main>
+
+      {/* Server Settings Modal */}
+      <ServerSettingsModal
+        isOpen={serverModalOpen}
+        onClose={() => setServerModalOpen(false)}
+      />
     </div>
   );
 };

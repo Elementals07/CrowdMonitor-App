@@ -68,17 +68,23 @@ jobs:
         uses: softprops/action-gh-release@v2
         if: github.ref == 'refs/heads/main'
         with:
-          tag_name: v1.0.0
-          name: "CrowdMonitor Mobile v1.0.0"
+          tag_name: v1.0.1
+          name: "CrowdMonitor Mobile v1.0.1 (Server Config Support)"
           draft: false
           prerelease: false
           token: ${{ secrets.GITHUB_TOKEN }}
           body: |
-            ### 📱 CrowdMonitor Android App (One-Click Download)
+            ### 📱 CrowdMonitor Android App v1.0.1
+
+            **What's New:**
+            - ⚙️ **Configurable Server Address**: Connect your phone to your PC's backend over Wi-Fi/LAN (`http://<PC_IP>:3001`).
+            - 🔌 **Dynamic Test Connection**: 1-click connection ping with latency and server uptime test.
+            - 🛡️ **Smooth Admin Login**: Auto-fills and authenticates directly with your live Node.js server.
             
-            Download and install **CrowdMonitor** directly onto your phone:
-            
-            - **Direct Download**: Tap `CrowdMonitor.apk` under **Assets** below.
-            - **Installation**: Tap the downloaded file to install on your Android device (allow unknown sources if prompted).
+            **How to Connect:**
+            1. Download and install `CrowdMonitor.apk` below.
+            2. Run `npm run dev` in your PC's `server` folder.
+            3. Tap **Server: Auto** at the top of the app, enter your PC's IP address (default is set to `http://10.124.148.23:3001`), and tap **Test Connection** -> **Save & Connect**.
+            4. Log in as admin (`admin` / `admin123`) or view live visitor data!
           files: |
             client/android/app/build/outputs/apk/debug/CrowdMonitor.apk

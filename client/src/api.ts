@@ -1,4 +1,61 @@
-const API_BASE = import.meta.env.VITE_API_URL || '/api';
+export const DEFAULT_SERVER_URL = 'http://10.124.148.23:3001';
+
+export function getServerUrl(): string {
+  const saved = localStorage.getItem('crowd_server_url');
+  if (saved && saved.trim()) {
+    return saved.trim().replace(/\/+$/, '');
+  }
+  // In Capacitor Android, protocol is capacitor: or hostname is localhost with no port
+  const isCapacitor = 
+    typeof window !== 'undefined' && 
+    (window.location.protocol === 'capacitor:' || 
+     window.location.protocol === 'file:' || 
+     (window.location.hostname === 'localhost' && !window.location.port));
+
+  if (isCapacitor) {
+    return DEFAULT_SERVER_URL;
+  }
+  return import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL.replace(/\/+$/, '') : '';
+}
+
+export function setServerUrl(url: string): void {
+  const cleanUrl = url.trim().replace(/\/+$/, '');
+  localStorage.setItem('crowd_server_url', cleanUrl);
+}
+
+export function getApiBase(): string {
+  const server = getServerUrl();
+  return server ? `${server}/api` : '/api';
+}
+
+export async function testServerConnection(url: string): Promise<{
+  ok: boolean;
+  uptime?: number;
+  latencyMs?: number;
+  error?: string;
+}> {
+  const cleanUrl = url.trim().replace(/\/+$/, '');
+  const testUrl = `${cleanUrl}/api/health`;
+  const startTime = Date.now();
+  try {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 6000);
+    const res = await fetch(testUrl, { signal: controller.signal });
+    clearTimeout(timer);
+    const latencyMs = Date.now() - startTime;
+    if (res.ok) {
+      const data = await res.json();
+      return { ok: true, uptime: data.uptime, latencyMs };
+    } else {
+      return { ok: false, error: `HTTP ${res.status}: ${res.statusText}` };
+    }
+  } catch (err: any) {
+    if (err.name === 'AbortError') {
+      return { ok: false, error: 'Connection timed out (6s). Check IP & port.' };
+    }
+    return { ok: false, error: err.message || 'Cannot reach server' };
+  }
+}
 
 export interface OccupancySample {
   id: number;
@@ -93,40 +150,55 @@ export interface SettingsMap {
 }
 
 async function apiFetch<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
-  const url = endpoint.startsWith('http') ? endpoint : `${API_BASE}${endpoint.startsWith('/') ? endpoint : `/${endpoint}`}`;
+  const apiBase = getApiBase();
+  const cleanEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
+  const url = endpoint.startsWith('http') ? endpoint : `${apiBase}${cleanEndpoint}`;
   
   const headers = new Headers(options.headers || {});
   if (!headers.has('Content-Type') && options.body && typeof options.body === 'string') {
     headers.set('Content-Type', 'application/json');
   }
 
-  const response = await fetch(url, {
-    ...options,
-    headers,
-  });
+  const token = localStorage.getItem('crowd_admin_token');
+  if (token && !headers.has('Authorization')) {
+    headers.set('Authorization', `Bearer ${token}`);
+  }
 
-  if (!response.ok) {
-    let errorMsg = `API request failed with status ${response.status}`;
-    try {
-      const errJson = await response.json();
-      if (errJson && errJson.message) {
-        errorMsg = errJson.message;
-      } else if (errJson && errJson.error) {
-        errorMsg = errJson.error;
+  try {
+    const response = await fetch(url, {
+      ...options,
+      headers,
+    });
+
+    if (!response.ok) {
+      let errorMsg = `API request failed with status ${response.status}`;
+      try {
+        const errJson = await response.json();
+        if (errJson && errJson.message) {
+          errorMsg = errJson.message;
+        } else if (errJson && errJson.error) {
+          errorMsg = errJson.error;
+        }
+      } catch {
+        // not JSON
       }
-    } catch {
-      // not JSON
+      throw new Error(errorMsg);
     }
-    throw new Error(errorMsg);
-  }
 
-  // Handle blob or text if not json
-  const contentType = response.headers.get('content-type');
-  if (contentType && contentType.includes('application/json')) {
-    const json = await response.json();
-    return json;
+    // Handle blob or text if not json
+    const contentType = response.headers.get('content-type');
+    if (contentType && contentType.includes('application/json')) {
+      const json = await response.json();
+      return json;
+    }
+    return response as unknown as T;
+  } catch (err: any) {
+    if (err.name === 'TypeError' && err.message && err.message.toLowerCase().includes('fetch')) {
+      const targetHost = apiBase || window.location.origin;
+      throw new Error(`Cannot reach server at ${targetHost}. Please check Server Settings and verify the backend is running.`);
+    }
+    throw err;
   }
-  return response as unknown as T;
 }
 
 export const api = {
@@ -211,7 +283,7 @@ export const api = {
   },
 
   getSessionExportUrl: (id: number): string => {
-    return `${API_BASE}/sessions/${id}/export`;
+    return `${getApiBase()}/sessions/${id}/export`;
   },
 
   // Alerts
@@ -235,7 +307,7 @@ export const api = {
     if (from !== undefined) q.set('from', from.toString());
     if (to !== undefined) q.set('to', to.toString());
     const qs = q.toString();
-    return `${API_BASE}/reports/events${qs ? `?${qs}` : ''}`;
+    return `${getApiBase()}/reports/events${qs ? `?${qs}` : ''}`;
   },
 
   getOccupancyReportUrl: (from?: number, to?: number): string => {
@@ -243,7 +315,7 @@ export const api = {
     if (from !== undefined) q.set('from', from.toString());
     if (to !== undefined) q.set('to', to.toString());
     const qs = q.toString();
-    return `${API_BASE}/reports/occupancy${qs ? `?${qs}` : ''}`;
+    return `${getApiBase()}/reports/occupancy${qs ? `?${qs}` : ''}`;
   },
 
   // Settings

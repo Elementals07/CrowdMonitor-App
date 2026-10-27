@@ -7,15 +7,21 @@ import {
   Activity, 
   KeyRound, 
   AlertCircle, 
-  Cpu,
-  Lock,
-  Layers,
-  CheckCircle2
+  Cpu, 
+  Lock, 
+  Layers, 
+  CheckCircle2,
+  Server
 } from 'lucide-react';
-import { api } from '../api';
+import { api, getServerUrl } from '../api';
+import { ServerSettingsModal } from '../components/ServerSettingsModal';
 
 export const LandingPage: React.FC = () => {
   const navigate = useNavigate();
+
+  // Server Settings Modal State
+  const [serverModalOpen, setServerModalOpen] = useState(false);
+  const [currentServer, setCurrentServer] = useState(getServerUrl());
 
   // User Sensor Lookup State
   const [sensorCode, setSensorCode] = useState('');
@@ -65,6 +71,9 @@ export const LandingPage: React.FC = () => {
       const res = await api.adminLogin({ username: adminUser.trim(), password: adminPass });
       if (res.data?.authenticated) {
         localStorage.setItem('crowd_admin_auth', 'true');
+        if (res.data?.token) {
+          localStorage.setItem('crowd_admin_token', res.data.token);
+        }
         navigate('/admin');
       }
     } catch (err: any) {
@@ -85,7 +94,7 @@ export const LandingPage: React.FC = () => {
       
       {/* Top Navigation Bar */}
       <header className="w-full bg-white border-b border-slate-200 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="h-10 w-10 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-500 flex items-center justify-center text-white shadow-md">
               <Activity className="h-5 w-5" />
@@ -101,13 +110,29 @@ export const LandingPage: React.FC = () => {
             </div>
           </div>
 
-          {/* Status Pill */}
-          <div className="hidden sm:flex items-center gap-2.5 px-3 py-1.5 rounded-full bg-emerald-50 border border-emerald-200 text-xs text-emerald-700">
-            <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-            </span>
-            <span className="font-medium">System Online</span>
+          <div className="flex items-center gap-2.5">
+            {/* Server Settings Trigger Pill */}
+            <button
+              type="button"
+              onClick={() => setServerModalOpen(true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-100 hover:bg-slate-200 border border-slate-300 text-xs text-slate-700 transition-colors shadow-xs"
+              title="Configure Backend Server Address"
+            >
+              <Server className="w-3.5 h-3.5 text-blue-600" />
+              <span className="font-medium hidden sm:inline text-[11px]">Server:</span>
+              <span className="font-mono text-[11px] max-w-[120px] truncate">
+                {currentServer || 'Auto'}
+              </span>
+            </button>
+
+            {/* Status Pill */}
+            <div className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-50 border border-emerald-200 text-xs text-emerald-700">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+              </span>
+              <span className="font-medium text-[11px]">Ready</span>
+            </div>
           </div>
         </div>
       </header>
@@ -161,9 +186,20 @@ export const LandingPage: React.FC = () => {
                   />
 
                   {lookupError && (
-                    <div className="mt-2.5 text-xs text-red-600 flex items-center gap-1.5 bg-red-50 border border-red-200 px-3 py-1.5 rounded-lg">
-                      <AlertCircle className="w-3.5 h-3.5 shrink-0" />
-                      <span>{lookupError}</span>
+                    <div className="mt-2.5 text-xs text-red-600 bg-red-50 border border-red-200 p-2.5 rounded-lg space-y-1">
+                      <div className="flex items-center gap-1.5 font-medium">
+                        <AlertCircle className="w-3.5 h-3.5 shrink-0 text-red-500" />
+                        <span>{lookupError}</span>
+                      </div>
+                      {lookupError.toLowerCase().includes('server') && (
+                        <button
+                          type="button"
+                          onClick={() => setServerModalOpen(true)}
+                          className="text-blue-600 underline font-semibold hover:text-blue-700 block text-[11px] pt-0.5"
+                        >
+                          ⚙️ Open Server Settings to verify IP & Port
+                        </button>
+                      )}
                     </div>
                   )}
                 </div>
@@ -256,9 +292,20 @@ export const LandingPage: React.FC = () => {
                   />
 
                   {loginError && (
-                    <div className="mt-2.5 text-xs text-red-600 flex items-center gap-1.5 bg-red-50 border border-red-200 px-3 py-1.5 rounded-lg">
-                      <AlertCircle className="w-3.5 h-3.5 shrink-0" />
-                      <span>{loginError}</span>
+                    <div className="mt-2.5 text-xs text-red-600 bg-red-50 border border-red-200 p-2.5 rounded-lg space-y-1">
+                      <div className="flex items-center gap-1.5 font-medium">
+                        <AlertCircle className="w-3.5 h-3.5 shrink-0 text-red-500" />
+                        <span>{loginError}</span>
+                      </div>
+                      {loginError.toLowerCase().includes('server') && (
+                        <button
+                          type="button"
+                          onClick={() => setServerModalOpen(true)}
+                          className="text-purple-700 underline font-semibold hover:text-purple-800 block text-[11px] pt-0.5"
+                        >
+                          ⚙️ Open Server Settings to verify IP & Port
+                        </button>
+                      )}
                     </div>
                   )}
                 </div>
@@ -334,6 +381,13 @@ export const LandingPage: React.FC = () => {
           </span>
         </div>
       </footer>
+
+      {/* Server Settings Modal */}
+      <ServerSettingsModal 
+        isOpen={serverModalOpen} 
+        onClose={() => setServerModalOpen(false)} 
+        onSaved={(newUrl) => setCurrentServer(newUrl)}
+      />
     </div>
   );
 };
