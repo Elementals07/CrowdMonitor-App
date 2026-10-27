@@ -110,28 +110,27 @@ export const LandingPage: React.FC = () => {
             </div>
           </div>
 
-          <div className="flex items-center gap-2.5">
-            {/* Server Settings Trigger Pill */}
+          <div className="flex items-center gap-2">
+            {/* System Mode Pill */}
             <button
               type="button"
               onClick={() => setServerModalOpen(true)}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-100 hover:bg-slate-200 border border-slate-300 text-xs text-slate-700 transition-colors shadow-xs"
-              title="Configure Backend Server Address"
+              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-full bg-slate-100 hover:bg-slate-200 border border-slate-300 text-xs text-slate-700 transition-colors shadow-xs"
+              title="Configure Network / Autonomous Mode"
             >
               <Server className="w-3.5 h-3.5 text-blue-600" />
-              <span className="font-medium hidden sm:inline text-[11px]">Server:</span>
-              <span className="font-mono text-[11px] max-w-[120px] truncate">
-                {currentServer || 'Auto'}
+              <span className="font-mono text-[11px] max-w-[100px] truncate">
+                {currentServer ? 'Remote' : 'Autonomous'}
               </span>
             </button>
 
             {/* Status Pill */}
-            <div className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-50 border border-emerald-200 text-xs text-emerald-700">
+            <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-full bg-emerald-50 border border-emerald-200 text-xs text-emerald-700">
               <span className="relative flex h-2 w-2">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
               </span>
-              <span className="font-medium text-[11px]">Ready</span>
+              <span className="font-medium text-[11px]">System Online</span>
             </div>
           </div>
         </div>

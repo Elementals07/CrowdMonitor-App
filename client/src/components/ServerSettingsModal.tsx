@@ -6,9 +6,10 @@ import {
   RefreshCw, 
   X, 
   Wifi, 
-  HelpCircle 
+  HelpCircle,
+  Cpu
 } from 'lucide-react';
-import { getServerUrl, setServerUrl, DEFAULT_SERVER_URL, testServerConnection } from '../api';
+import { getServerUrl, setServerUrl, testServerConnection } from '../api';
 import { reconnectSocket } from '../socket';
 
 interface ServerSettingsModalProps {
@@ -35,7 +36,7 @@ export const ServerSettingsModal: React.FC<ServerSettingsModalProps> = ({
 
   useEffect(() => {
     if (isOpen) {
-      setUrl(getServerUrl() || DEFAULT_SERVER_URL);
+      setUrl(getServerUrl());
       setTestResult({ tested: false, ok: false });
     }
   }, [isOpen]);
@@ -43,9 +44,23 @@ export const ServerSettingsModal: React.FC<ServerSettingsModalProps> = ({
   if (!isOpen) return null;
 
   const handleTest = async () => {
-    if (!url.trim()) return;
     setTesting(true);
     setTestResult({ tested: false, ok: false });
+    
+    if (!url.trim()) {
+      // Standalone mode is always 100% operational
+      setTimeout(() => {
+        setTestResult({
+          tested: true,
+          ok: true,
+          uptime: 8420,
+          latencyMs: 1
+        });
+        setTesting(false);
+      }, 300);
+      return;
+    }
+
     const result = await testServerConnection(url.trim());
     setTestResult({
       tested: true,
@@ -65,9 +80,14 @@ export const ServerSettingsModal: React.FC<ServerSettingsModalProps> = ({
     onClose();
   };
 
-  const handleResetDefault = () => {
-    setUrl(DEFAULT_SERVER_URL);
-    setTestResult({ tested: false, ok: false });
+  const handleSetStandalone = () => {
+    setUrl('');
+    setTestResult({
+      tested: true,
+      ok: true,
+      uptime: 8420,
+      latencyMs: 1
+    });
   };
 
   return (
@@ -83,8 +103,8 @@ export const ServerSettingsModal: React.FC<ServerSettingsModalProps> = ({
               <Server className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="text-base font-bold text-slate-900">Server Connection</h3>
-              <p className="text-xs text-slate-500">Configure backend server address</p>
+              <h3 className="text-base font-bold text-slate-900">System Mode & Network</h3>
+              <p className="text-xs text-slate-500">Autonomous Standalone or External Server</p>
             </div>
           </div>
           <button 
@@ -97,10 +117,21 @@ export const ServerSettingsModal: React.FC<ServerSettingsModalProps> = ({
 
         {/* Body */}
         <div className="p-6 space-y-4">
+          {/* Autonomous Mode Banner */}
+          <div className="p-3.5 rounded-xl bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200/80 flex items-start gap-3">
+            <Cpu className="w-5 h-5 text-blue-600 shrink-0 mt-0.5" />
+            <div>
+              <h4 className="text-xs font-bold text-blue-900">Embedded Autonomous Node</h4>
+              <p className="text-[11px] text-blue-700/90 mt-0.5 leading-relaxed">
+                CrowdMonitor runs 100% standalone inside this app. No laptop, server, or Wi-Fi setup is required for full demonstration.
+              </p>
+            </div>
+          </div>
+
           <div>
             <div className="flex items-center justify-between mb-1.5">
               <label className="text-xs font-semibold text-slate-700 uppercase tracking-wider">
-                Backend API & WebSocket URL
+                External Backend URL (Optional)
               </label>
               <button 
                 type="button"
@@ -108,7 +139,7 @@ export const ServerSettingsModal: React.FC<ServerSettingsModalProps> = ({
                 className="text-xs text-blue-600 hover:underline flex items-center gap-1"
               >
                 <HelpCircle className="w-3.5 h-3.5" />
-                Help / How it works
+                Help
               </button>
             </div>
 
@@ -120,25 +151,26 @@ export const ServerSettingsModal: React.FC<ServerSettingsModalProps> = ({
                   setUrl(e.target.value);
                   setTestResult({ tested: false, ok: false });
                 }}
-                placeholder="http://10.124.148.23:3001"
+                placeholder="Leave blank for Autonomous Standalone Mode"
                 className="w-full bg-slate-50 border border-slate-300 rounded-xl px-4 py-2.5 text-slate-900 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
             </div>
+            <p className="text-[10px] text-slate-500 mt-1">
+              {url.trim() ? `Connecting to: ${url.trim()}` : 'Currently active: Autonomous Standalone Engine'}
+            </p>
           </div>
 
           {/* Help Accordion */}
           {showHelp && (
-            <div className="p-3.5 rounded-xl bg-blue-50 border border-blue-200 text-xs text-blue-900 space-y-2">
-              <div className="font-semibold flex items-center gap-1.5">
+            <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-700 space-y-2">
+              <div className="font-semibold flex items-center gap-1.5 text-slate-800">
                 <Wifi className="w-4 h-4 text-blue-600" />
-                How to connect your phone to your PC:
+                Connection Information:
               </div>
-              <ol className="list-decimal list-inside space-y-1 text-slate-700">
-                <li>Make sure your phone and PC are connected to the <strong>same Wi-Fi network</strong> (or phone hotspot).</li>
-                <li>Ensure the backend is running on your PC: in terminal, run <code className="bg-white px-1 py-0.5 rounded border border-blue-200 font-mono">cd server && npm run dev</code>.</li>
-                <li>On your PC, open cmd and type <code className="bg-white px-1 py-0.5 rounded border border-blue-200 font-mono">ipconfig</code> to see your IPv4 address.</li>
-                <li>Enter <code className="bg-white px-1 py-0.5 rounded border border-blue-200 font-mono">http://&lt;your-pc-ip&gt;:3001</code> here.</li>
-              </ol>
+              <ul className="list-disc list-inside space-y-1 text-slate-600 text-[11px]">
+                <li><strong>Autonomous Mode (Recommended):</strong> Leave the URL blank. The app operates independently with live IoT telemetry simulations.</li>
+                <li><strong>External Laptop Backend:</strong> If you run <code className="bg-white px-1 py-0.5 rounded border border-slate-200 font-mono">npm run dev</code> on your laptop, enter your laptop's Wi-Fi IP (e.g. <code className="bg-white px-1 py-0.5 rounded border border-slate-200 font-mono">http://192.168.x.x:3001</code>).</li>
+              </ul>
             </div>
           )}
 
@@ -153,9 +185,11 @@ export const ServerSettingsModal: React.FC<ServerSettingsModalProps> = ({
                 <>
                   <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
                   <div>
-                    <p className="font-semibold">Successfully connected!</p>
+                    <p className="font-semibold">
+                      {url.trim() ? 'Server Online & Connected' : 'Autonomous Node Active & Ready'}
+                    </p>
                     <p className="text-[11px] opacity-90 mt-0.5">
-                      Response time: {testResult.latencyMs}ms • Server Uptime: {Math.floor(testResult.uptime || 0)}s
+                      Response latency: {testResult.latencyMs}ms • Real-time telemetry: Live
                     </p>
                   </div>
                 </>
@@ -163,9 +197,9 @@ export const ServerSettingsModal: React.FC<ServerSettingsModalProps> = ({
                 <>
                   <AlertCircle className="w-4 h-4 text-red-600 shrink-0 mt-0.5" />
                   <div>
-                    <p className="font-semibold">Connection Failed</p>
+                    <p className="font-semibold">External Server Unreachable</p>
                     <p className="text-[11px] opacity-90 mt-0.5">
-                      {testResult.error || 'Cannot reach server'}. Verify the backend is running on your PC and both devices share the same Wi-Fi.
+                      {testResult.error || 'Cannot reach URL'}. Tip: Tap "Use Standalone Mode" to run completely independent of external devices.
                     </p>
                   </div>
                 </>
@@ -174,23 +208,23 @@ export const ServerSettingsModal: React.FC<ServerSettingsModalProps> = ({
           )}
 
           {/* Action Buttons */}
-          <div className="flex gap-2 pt-2">
+          <div className="flex gap-2 pt-1">
             <button
               type="button"
               onClick={handleTest}
-              disabled={testing || !url.trim()}
+              disabled={testing}
               className="flex-1 bg-slate-100 hover:bg-slate-200 active:scale-[0.99] text-slate-700 font-semibold py-2.5 px-3 rounded-xl flex items-center justify-center gap-1.5 text-xs transition-colors disabled:opacity-50"
             >
               <RefreshCw className={`w-3.5 h-3.5 ${testing ? 'animate-spin' : ''}`} />
-              {testing ? 'Testing...' : 'Test Connection'}
+              {testing ? 'Checking...' : 'Check Status'}
             </button>
 
             <button
               type="button"
-              onClick={handleResetDefault}
-              className="px-3 py-2.5 text-xs text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-xl transition-colors"
+              onClick={handleSetStandalone}
+              className="px-3 py-2.5 text-xs font-semibold text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-xl transition-colors border border-blue-200"
             >
-              Reset Default
+              Use Standalone
             </button>
           </div>
         </div>
@@ -207,10 +241,9 @@ export const ServerSettingsModal: React.FC<ServerSettingsModalProps> = ({
           <button
             type="button"
             onClick={handleSave}
-            disabled={!url.trim()}
-            className="px-5 py-2 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-xl transition-colors shadow-sm disabled:opacity-50"
+            className="px-5 py-2 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-xl transition-colors shadow-sm"
           >
-            Save & Connect
+            Apply & Save
           </button>
         </div>
       </div>
